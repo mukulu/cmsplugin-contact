@@ -22,6 +22,12 @@ class BaseContact(CMSPlugin):
     email_label = models.CharField(_('Email sender label'),
                                    default=_('Your email address'),
                                    max_length=100)
+    phonenumber_label = models.CharField(_('Phone number sender label'),
+                                   default=_('Your Phone number'),
+                                   max_length=100)
+    name_label = models.CharField(_('Your Full name'),
+                                   default=_('Your Full name'),
+                                   max_length=100)
     subject_label = models.CharField(_('Subject label'),
                                      default=_('Subject'), max_length=200)
     content_label = models.CharField(_('Message content label'),

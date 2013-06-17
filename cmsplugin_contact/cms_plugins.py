@@ -1,4 +1,3 @@
-from django import dispatch
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from django.forms.fields import CharField
@@ -13,10 +12,6 @@ from models import Contact
 from forms import ContactForm, AkismetContactForm, RecaptchaContactForm, HoneyPotContactForm
 from admin import ContactAdminForm
 
-
-email_sent = dispatch.Signal(providing_args=["data",])
-
-
 class ContactPlugin(CMSPluginBase):
     model = Contact
     name = _("Contact Form")
@@ -28,7 +23,7 @@ class ContactPlugin(CMSPluginBase):
     
     fieldsets = (
         (None, {
-            'fields': ('site_email', 'email_label', 'subject_label', 'content_label', 'thanks', 'submit'),
+            'fields': ('site_email','phonenumber_label', 'name_label', 'email_label', 'subject_label', 'content_label', 'thanks', 'submit'),
         }),
         (_('Spam Protection'), {
             'fields': ('spam_protection_method', 'akismet_api_key', 'recaptcha_public_key', 'recaptcha_private_key', 'recaptcha_theme')
@@ -45,9 +40,6 @@ class ContactPlugin(CMSPluginBase):
         if USE_TINYMCE and "tinymce" in settings.INSTALLED_APPS:
             from cms.plugins.text.widgets.tinymce_widget import TinyMCEEditor
             return TinyMCEEditor(installed_plugins=plugins)
-        elif "djangocms_text_ckeditor" in settings.INSTALLED_APPS:
-            from djangocms_text_ckeditor.widgets import TextEditorWidget
-            return TextEditorWidget(installed_plugins=plugins)
         else:
             return WYMEditor(installed_plugins=plugins)
 
@@ -79,17 +71,15 @@ class ContactPlugin(CMSPluginBase):
                 pass
             FormClass = ContactForm
         elif instance.get_spam_protection_method_display() == 'ReCAPTCHA':
-            #if you really want the user to be able to set the key in
-            # every form, this should be more flexible
+            RecaptchaContactForm.recaptcha_public_key = getattr(
+                settings, "RECAPTCHA_PUBLIC_KEY",
+                instance.recaptcha_public_key)
+            RecaptchaContactForm.recaptcha_private_key = getattr(
+                settings, "RECAPTCHA_PRIVATE_KEY",
+                instance.recaptcha_private_key)
+            RecaptchaContactForm.recaptcha_theme = instance.recaptcha_theme
             class ContactForm(self.contact_form, RecaptchaContactForm):
-                recaptcha_public_key = getattr(
-                    settings, "RECAPTCHA_PUBLIC_KEY",
-                    instance.recaptcha_public_key)
-                recaptcha_private_key = getattr(
-                    settings, "RECAPTCHA_PRIVATE_KEY",
-                    instance.recaptcha_private_key)
-                recaptcha_theme = instance.recaptcha_theme
-
+                pass
             FormClass = ContactForm
         else:
             class ContactForm(self.contact_form, HoneyPotContactForm):
@@ -97,12 +87,12 @@ class ContactPlugin(CMSPluginBase):
             FormClass = ContactForm
             
         if request.method == "POST":
-            return FormClass(request, data=request.POST, files=request.FILES)
+            return FormClass(request, data=request.POST)
         else:
             return FormClass(request)
 
 
-    def send(self, form, site_email, attachments=None):
+    def send(self, form, site_email):
         subject = form.cleaned_data['subject']
         if not subject:
             subject = _('No subject')
@@ -113,16 +103,12 @@ class ContactPlugin(CMSPluginBase):
             render_to_string(self.email_template, {
                 'data': form.cleaned_data,
             }),
-            getattr(settings, 'DEFAULT_FROM_EMAIL', form.cleaned_data['email']),
+            form.cleaned_data['email'],
             [site_email],
             headers = {
                 'Reply-To': form.cleaned_data['email']
             },)
-        if attachments:
-            for var_name, data in attachments.iteritems():
-                email_message.attach(data.name, data.read(), data.content_type)
         email_message.send(fail_silently=False)
-        email_sent.send(sender=self, data=form.cleaned_data)
     
     def render(self, context, instance, placeholder):
         request = context['request']
@@ -130,7 +116,7 @@ class ContactPlugin(CMSPluginBase):
         form = self.create_form(instance, request)
     
         if request.method == "POST" and form.is_valid():
-            self.send(form, instance.site_email, attachments=request.FILES)
+            self.send(form, instance.site_email)
             context.update( {
                 'contact': instance,
             })
