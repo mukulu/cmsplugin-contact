@@ -32,6 +32,8 @@ class BaseContact(CMSPlugin):
                                      default=_('Subject'), max_length=200)
     content_label = models.CharField(_('Message content label'),
                                      default=_('Message'), max_length=100)
+    receive_a_copy_of_message_label = models.CharField(_('Receive A Copy of this message label'),
+                                     default=_('Receive A copy of the message'), max_length=100)
     thanks = models.TextField(
         verbose_name=_("Thanks message"),
         help_text=_('Message displayed on successful submit'),

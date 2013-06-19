@@ -8,6 +8,7 @@ class ContactForm(forms.Form):
     email = forms.EmailField()
     subject = forms.CharField(required=False)
     content = forms.CharField(widget=forms.Textarea())
+    receive_a_copy_of_message = forms.BooleanField(required=False)
 
   
 class HoneyPotContactForm(HoneyPotForm):
