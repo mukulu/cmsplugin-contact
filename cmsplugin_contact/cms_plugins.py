@@ -23,7 +23,7 @@ class ContactPlugin(CMSPluginBase):
     
     fieldsets = (
         (None, {
-            'fields': ('site_email','phonenumber_label', 'name_label', 'email_label', 'subject_label', 'content_label','receive_a_copy_of_message_label', 'thanks', 'submit'),
+            'fields': ('site_email', 'phonenumber_label', 'name_label', 'email_label', 'subject_label', 'content_label', 'receive_a_copy_of_message_label', 'thanks', 'submit'),
         }),
         (_('Spam Protection'), {
             'fields': ('spam_protection_method', 'akismet_api_key', 'recaptcha_public_key', 'recaptcha_private_key', 'recaptcha_theme')
@@ -61,7 +61,7 @@ class ContactPlugin(CMSPluginBase):
     def get_form(self, request, obj=None, **kwargs):
         plugins = plugin_pool.get_text_enabled_plugins(self.placeholder, self.page)
         form = self.get_form_class(request, plugins)
-        kwargs['form'] = form # override standard form
+        kwargs['form'] = form  # override standard form
         return super(ContactPlugin, self).get_form(request, obj, **kwargs)
 
     def create_form(self, instance, request):
@@ -96,21 +96,12 @@ class ContactPlugin(CMSPluginBase):
         subject = form.cleaned_data['subject']
         if not subject:
             subject = _('No subject')
+        
+        bcc = []
         if form.cleaned_data['receive_a_copy_of_message']:
-            email_message = EmailMessage(
-                render_to_string(self.subject_template, {
-                    'subject': subject,
-                }).splitlines()[0],
-                render_to_string(self.email_template, {
-                    'data': form.cleaned_data,
-                }),
-                form.cleaned_data['email'],
-                [site_email,form.cleaned_data['receive_a_copy_of_message']],
-                headers = {
-                    'Reply-To': form.cleaned_data['email']
-                },)
-        else:
-            email_message = EmailMessage(
+            bcc.append(form.cleaned_data['email'])
+
+        email_message = EmailMessage(
                 render_to_string(self.subject_template, {
                     'subject': subject,
                 }).splitlines()[0],
@@ -119,7 +110,8 @@ class ContactPlugin(CMSPluginBase):
                 }),
                 form.cleaned_data['email'],
                 [site_email],
-                headers = {
+                bcc,
+                headers={
                     'Reply-To': form.cleaned_data['email']
                 },)
         email_message.send(fail_silently=False)
@@ -131,7 +123,7 @@ class ContactPlugin(CMSPluginBase):
     
         if request.method == "POST" and form.is_valid():
             self.send(form, instance.site_email)
-            context.update( {
+            context.update({
                 'contact': instance,
             })
         else:
