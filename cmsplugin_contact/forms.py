@@ -7,7 +7,10 @@ class ContactForm(forms.Form):
     phonenumber = forms.CharField()
     email = forms.EmailField()
     subject = forms.CharField(required=False)
-    content = forms.CharField(widget=forms.Textarea())
+    content = forms.CharField(widget=forms.Textarea(attrs={'onkeydown' : "checkContentLimit('id_content', 500)",
+                                                           'onkeyup': "checkContentLimit('id_content',500)",
+                                                           'onchange': "checkContentLimit('id_content',500)",
+                                                           }))
     receive_a_copy_of_message = forms.BooleanField(required=False)
 
   

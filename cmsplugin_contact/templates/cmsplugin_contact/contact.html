@@ -68,17 +68,29 @@
                 {% endif %}
             </div>
         </div>
+        <!-- content counter -->
+        <div class="control-group">
+            <div class="controls" style="margin-left: 100px;">
+                <p>{% trans 'Du har' %}</p>
+                <label class="text-info">
+                    <input style="text-align: center;" type="text" readonly="readonly" class="countdown_editbox" name="countdown_aics_message" id="countdown_aics_message" value="500">
+                </label>
+                <p>{% trans 'gjenstående tegn.' %}</p>
+            </div>
+         </div>
+         <!-- end content counter -->
         <div class="control-group {% if form.content.errors %} error{% endif %}">
-            <div class="controls" style="float:left;padding-right:10px;">
-                {{ form.receive_a_copy_of_message }}
-                
+            <div class="controls">
+                <label class="checkbox">
+                    {{ form.receive_a_copy_of_message }}
+                    {{ contact.receive_a_copy_of_message_label }}{% if form.receive_a_copy_of_message.field.required %}*{% endif %}
+                </label>
                 {% if form.receive_a_copy_of_message.errors %}
                     {% for error in form.receive_a_copy_of_message.errors %}
                         <span class="help-inline">{{ error }}</span>
                     {% endfor %}
                 {% endif %}
             </div>
-            <label class="control-label" for="inputContent">{{ contact.receive_a_copy_of_message_label }} {% if form.receive_a_copy_of_message.field.required %}*{% endif %}</label>
         </div>
         
         
@@ -131,3 +143,13 @@
 {% else %}
     {{ contact.thanks|safe }}
 {% endif %}
+
+<script type="text/javascript">
+    function checkContentLimit(content_id, chars_limit){
+        if (document.getElementById(content_id).value.length > chars_limit){
+            alert('Maksimalt antall tegn er n&aring;dd ! !');
+        } else{
+            document.getElementById('countdown_aics_message').value = chars_limit - document.getElementById(content_id).value.length;
+        }
+    };
+</script>
